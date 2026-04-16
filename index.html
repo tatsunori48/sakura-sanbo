@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Sakura Street AI参謀本部</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Shippori+Mincho:wght@500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sakura: #D4537E;
+  --sakura-light: #FBEAF0;
+  --sakura-dark: #99355A;
+  --gold: #BA7517;
+  --gold-light: #FAEEDA;
+  --ink: #1a1a2e;
+  --ink-mid: #3a3a5c;
+  --ink-light: #6b6b8a;
+  --surface: #fafaf8;
+  --surface2: #f3f0eb;
+  --white: #ffffff;
+  --border: rgba(0,0,0,0.08);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body {
+  font-family: 'Noto Sans JP', sans-serif;
+  background: var(--surface);
+  color: var(--ink);
+  min-height: 100vh;
+  padding-bottom: 2rem;
+}
+
+/* API KEY SCREEN */
+#apiscreen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  background: var(--ink);
+}
+.api-logo { font-family: 'Shippori Mincho', serif; font-size: 28px; color: var(--sakura); margin-bottom: 8px; }
+.api-sub { font-size: 13px; color: rgba(255,255,255,0.5); margin-bottom: 2rem; }
+.api-label { font-size: 13px; color: rgba(255,255,255,0.7); margin-bottom: 8px; align-self: flex-start; width: 100%; max-width: 360px; }
+.api-input {
+  width: 100%; max-width: 360px;
+  background: rgba(255,255,255,0.08);
+  border: 0.5px solid rgba(255,255,255,0.2);
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 14px;
+  padding: 12px 14px;
+  font-family: monospace;
+  margin-bottom: 12px;
+}
+.api-input::placeholder { color: rgba(255,255,255,0.3); }
+.api-btn {
+  width: 100%; max-width: 360px;
+  background: var(--sakura);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: white;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 14px;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.api-note { font-size: 11px; color: rgba(255,255,255,0.3); margin-top: 12px; max-width: 360px; text-align: center; line-height: 1.6; }
+
+/* MAIN APP */
+#app { display: none; }
+
+.top-bar {
+  background: var(--ink);
+  padding: 1rem 1.25rem 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+.top-bar-title { font-family: 'Shippori Mincho', serif; font-size: 16px; color: var(--sakura); }
+.top-bar-sub { font-size: 11px; color: rgba(255,255,255,0.4); }
+.logout-btn {
+  font-size: 11px;
+  color: rgba(255,255,255,0.4);
+  background: transparent;
+  border: 0.5px solid rgba(255,255,255,0.15);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+}
+
+.main-pad { padding: 1.25rem; }
+
+/* HQ CARD */
+.hq-card {
+  background: var(--ink);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  text-align: center;
+  margin-bottom: 1.25rem;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.15s;
+}
+.hq-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, rgba(212,83,126,0.25) 0%, transparent 70%);
+}
+.hq-card:active { transform: scale(0.98); }
+.hq-icon { font-size: 32px; margin-bottom: 6px; }
+.hq-name { font-family: 'Shippori Mincho', serif; font-size: 18px; color: var(--sakura); }
+.hq-role { font-size: 12px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+.hq-badge {
+  position: absolute;
+  top: 12px; right: 12px;
+  background: var(--sakura);
+  color: white;
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+}
+
+/* SECTION HEADER */
+.section-title {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-light);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+
+/* AGENT GRID */
+.agent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 1.5rem;
+}
+.agent-card {
+  background: var(--white);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.15s, border-color 0.15s, background 0.15s;
+}
+.agent-card:active { transform: scale(0.96); }
+.agent-card.selected {
+  border-color: var(--sakura);
+  background: var(--sakura-light);
+}
+.agent-icon { font-size: 22px; margin-bottom: 5px; display: block; }
+.agent-name { font-size: 12px; font-weight: 500; color: var(--ink); line-height: 1.3; }
+.agent-role { font-size: 10px; color: var(--ink-light); margin-top: 2px; line-height: 1.3; }
+
+/* STATUS CHIPS */
+.status-row { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.chip {
+  font-size: 11px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 0.5px solid var(--border);
+  background: var(--surface2);
+  color: var(--ink-light);
+}
+.chip.on { background: #EAF3DE; color: #3B6D11; border-color: #C0DD97; }
+
+/* CHAT PANEL */
+.chat-panel {
+  background: var(--white);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+.chat-header {
+  background: var(--ink);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.chat-header-icon { font-size: 20px; }
+.chat-header-name { font-size: 14px; font-weight: 500; color: white; }
+.chat-header-role { font-size: 11px; color: rgba(255,255,255,0.5); }
+
+.chat-messages {
+  padding: 1rem;
+  min-height: 120px;
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.msg {
+  max-width: 88%;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 14px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+.msg.user {
+  align-self: flex-end;
+  background: var(--ink);
+  color: white;
+  border-bottom-right-radius: 4px;
+}
+.msg.ai {
+  align-self: flex-start;
+  background: var(--surface2);
+  color: var(--ink);
+  border-bottom-left-radius: 4px;
+}
+.msg.loading {
+  align-self: flex-start;
+  background: var(--surface2);
+  color: var(--ink-light);
+  font-size: 13px;
+}
+.msg.error {
+  align-self: flex-start;
+  background: #FCEBEB;
+  color: #A32D2D;
+  font-size: 13px;
+}
+
+.chat-input-row {
+  display: flex;
+  gap: 8px;
+  padding: 10px 12px;
+  border-top: 0.5px solid var(--border);
+  background: var(--surface);
+}
+.chat-textarea {
+  flex: 1;
+  border: 0.5px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: 'Noto Sans JP', sans-serif;
+  color: var(--ink);
+  background: var(--white);
+  resize: none;
+  min-height: 44px;
+  max-height: 120px;
+  line-height: 1.5;
+}
+.chat-textarea:focus { outline: none; border-color: var(--sakura); }
+.send-btn {
+  background: var(--sakura);
+  border: none;
+  border-radius: 10px;
+  width: 44px;
+  min-height: 44px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: background 0.15s, transform 0.1s;
+}
+.send-btn:active { transform: scale(0.93); background: var(--sakura-dark); }
+.send-btn svg { width: 18px; height: 18px; fill: white; }
+.send-btn:disabled { background: var(--ink-light); }
+
+/* PRESET PROMPTS */
+.preset-label { font-size: 12px; color: var(--ink-light); padding: 8px 12px 4px; }
+.preset-row { display: flex; gap: 6px; overflow-x: auto; padding: 0 12px 10px; scrollbar-width: none; }
+.preset-row::-webkit-scrollbar { display: none; }
+.preset-btn {
+  flex-shrink: 0;
+  background: var(--sakura-light);
+  border: 0.5px solid rgba(212,83,126,0.2);
+  border-radius: 8px;
+  font-size: 12px;
+  color: var(--sakura-dark);
+  padding: 6px 12px;
+  cursor: pointer;
+  font-family: 'Noto Sans JP', sans-serif;
+  white-space: nowrap;
+  transition: background 0.12s;
+}
+.preset-btn:active { background: rgba(212,83,126,0.2); }
+
+/* EMPTY STATE */
+.empty-state {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--ink-light);
+  font-size: 14px;
+  line-height: 1.8;
+}
+.empty-icon { font-size: 36px; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- API KEY SCREEN -->
+<div id="apiscreen">
+  <div class="api-logo">桜 Sakura Street</div>
+  <div class="api-sub">AI参謀本部 — APIキーを入力して開始</div>
+  <div class="api-label">Claude APIキー</div>
+  <input class="api-input" type="password" id="apikey-input" placeholder="sk-ant-api03-..." autocomplete="off" />
+  <button class="api-btn" onclick="startApp()">参謀本部を開く</button>
+  <div class="api-note">APIキーはこの端末のみに保存されます。<br>外部サーバーには送信されません。</div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="top-bar">
+    <div>
+      <div class="top-bar-title">桜 AI参謀本部</div>
+      <div class="top-bar-sub">Sakura Street — 5拠点サポート</div>
+    </div>
+    <button class="logout-btn" onclick="logout()">ログアウト</button>
+  </div>
+
+  <div class="main-pad">
+
+    <!-- 総括参謀 -->
+    <div class="hq-card" onclick="selectAgent(0)">
+      <div class="hq-badge">総司令</div>
+      <div class="hq-icon">👑</div>
+      <div class="hq-name">総括参謀</div>
+      <div class="hq-role" style="color:rgba(255,255,255,0.5);">全体統括・右腕</div>
+    </div>
+
+    <div class="section-title">参謀チーム</div>
+    <div class="agent-grid" id="agent-grid"></div>
+
+    <div class="section-title">稼働状況</div>
+    <div class="status-row">
+      <div class="chip on">✓ 議事録</div>
+      <div class="chip on">✓ 売上DB</div>
+      <div class="chip on">✓ 予算管理</div>
+      <div class="chip">SNS発信</div>
+      <div class="chip">LP生成</div>
+      <div class="chip">ブランディング</div>
+      <div class="chip">労務管理</div>
+    </div>
+
+    <div class="section-title" id="chat-section-title">チャット</div>
+
+    <!-- EMPTY STATE -->
+    <div class="empty-state" id="empty-state">
+      <div class="empty-icon">☝️</div>
+      上のカードから<br>参謀を選んでください
+    </div>
+
+    <!-- CHAT PANEL -->
+    <div class="chat-panel" id="chat-panel" style="display:none;">
+      <div class="chat-header">
+        <div class="chat-header-icon" id="ch-icon"></div>
+        <div>
+          <div class="chat-header-name" id="ch-name"></div>
+          <div class="chat-header-role" id="ch-role"></div>
+        </div>
+      </div>
+      <div class="preset-label">よく使う指示</div>
+      <div class="preset-row" id="preset-row"></div>
+      <div class="chat-messages" id="chat-messages"></div>
+      <div class="chat-input-row">
+        <textarea class="chat-textarea" id="chat-input" placeholder="指示を入力..." rows="1"
+          oninput="autoResize(this)" onkeydown="handleKey(event)"></textarea>
+        <button class="send-btn" id="send-btn" onclick="sendMessage()">
+          <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const AGENTS = [
+  {icon:"👑", name:"総括参謀", role:"全体統括・右腕",
+   system:"あなたはSakura Street（整骨院5拠点・スタッフ約30名）の総括参謀AIです。代表・前川竜德のビジョン「健康へのおもてなしで感動を」を軸に、経営判断・課題整理・優先順位付けをサポートします。簡潔かつ実践的に回答してください。",
+   presets:["今週の課題を整理して","5拠点の優先順位を教えて","代表として意思決定すべきことは？"]},
+  {icon:"📈", name:"売上戦略", role:"売上・目標達成",
+   system:"あなたはSakura Streetの売上戦略コンサルタントAIです。5拠点（Sakura-dori・Balance・Kirary・Sumiyoshi・Mac）の売上達成率分析・改善提案・目標設定をサポートします。",
+   presets:["先月の達成率を分析して","売上改善の優先施策は？","拠点別の課題を整理して"]},
+  {icon:"📣", name:"集客・広告", role:"マーケター",
+   system:"あなたはSakura Streetの集客・広告マーケターAIです。Instagram・HotPepper・Google広告の文章生成・キャンペーン提案を行います。整骨院ならではの集客視点で提案してください。",
+   presets:["Instagram投稿文を3案作って","新患獲得キャンペーンを考えて","Google広告のキーワード候補を出して"]},
+  {icon:"📱", name:"情報発信", role:"SNSディレクター",
+   system:"あなたはSakura StreetのSNS情報発信ディレクターAIです。5拠点のInstagram・LINE公式アカウントの投稿スケジュールとコンテンツ案を自動生成します。",
+   presets:["今月の投稿カレンダーを作って","LINE配信文を作って","ハッシュタグを提案して"]},
+  {icon:"🔢", name:"数値管理", role:"アナリスト",
+   system:"あなたはSakura Streetの数値管理アナリストAIです。売上・患者数・スタッフ稼働率などの数値を分析し、経営判断に役立つ示唆を出します。",
+   presets:["患者数の推移を分析して","KPI一覧のフォーマットを作って","数値で見えている課題は？"]},
+  {icon:"🔍", name:"競合分析", role:"リサーチャー",
+   system:"あなたはSakura Streetの競合分析リサーチャーAIです。近隣整骨院・鍼灸院の動向・料金・サービスを分析し、差別化ポイントを提案します。",
+   presets:["競合との差別化ポイントを整理して","近隣院の強みと弱みを分析して","料金設定の参考情報を教えて"]},
+  {icon:"🔄", name:"リピート管理", role:"LTVマネージャー",
+   system:"あなたはSakura StreetのリピートLTVマネージャーAIです。患者の継続来院促進・離脱防止・LTV向上のための施策と文章を作成します。",
+   presets:["離脱患者へのLINE文を作って","リピート促進施策を提案して","初回から2回目への導線を考えて"]},
+  {icon:"📋", name:"エグゼクティブ秘書", role:"議事録・スケジュール",
+   system:"あなたはSakura Streetのエグゼクティブ秘書AIです。Zoom会議の議事録整理・決定事項抽出・タスク管理・スケジュール調整をサポートします。",
+   presets:["議事録から決定事項を抽出して","タスクリストを整理して","スケジュール調整の文面を作って"]},
+  {icon:"💰", name:"財務", role:"財務・会計",
+   system:"あなたはSakura Streetの財務・会計コンサルタントAIです。予算vs実績の分析・資金繰りの可視化・コスト削減提案をサポートします。",
+   presets:["予算と実績の差異を分析して","コスト削減できる項目は？","財務上の注意点を教えて"]},
+  {icon:"🎨", name:"デザイン", role:"LP・チラシ担当",
+   system:"あなたはSakura StreetのデザインディレクターAIです。ランディングページ・チラシ・院内POPの構成案とコピーを自動生成します。",
+   presets:["LPの構成案を作って","キャッチコピーを5案作って","チラシのテキスト案を作って"]},
+  {icon:"💎", name:"ブランディング戦略", role:"ブランド・差別化",
+   system:"あなたはSakura Streetのブランディング戦略コンサルタントAIです。「健康へのおもてなしで感動を」という理念をもとに、ブランドの差別化・世界観の言語化・長期ブランド戦略を支援します。",
+   presets:["ブランドストーリーを作って","理念を言語化して","他院との差別化を整理して"]},
+  {icon:"🤝", name:"採用", role:"採用・求人担当",
+   system:"あなたはSakura Streetの採用担当AIです。柔道整復師・鍼灸師・受付スタッフの求人票作成・採用基準整理・面接質問設計をサポートします。",
+   presets:["柔道整復師の求人票を作って","面接でよく使う質問リストを作って","採用基準を整理して"]},
+  {icon:"🌱", name:"育成・研修", role:"スタッフ成長担当",
+   system:"あなたはSakura Streetの育成・研修担当AIです。スタッフの成長計画・研修カリキュラム設計・マニュアル作成をサポートします。",
+   presets:["新人3ヶ月育成計画を作って","研修カリキュラムの骨子を作って","マニュアルのテンプレートを作って"]},
+  {icon:"⚖️", name:"労務管理", role:"労務・コンプライアンス",
+   system:"あなたはSakura Streetの労務管理コンサルタントAIです。勤怠ルール整備・有給管理・シフト管理・労働基準法の確認をサポートします。具体的かつ実践的に回答してください。",
+   presets:["有給管理で注意すべき点は？","シフト作成の法的ポイントを教えて","労務トラブルを防ぐには？"]},
+];
+
+let apiKey = '';
+let selectedIdx = null;
+let chatHistory = {};
+let isLoading = false;
+
+function startApp() {
+  const key = document.getElementById('apikey-input').value.trim();
+  if (!key.startsWith('sk-ant-')) {
+    alert('有効なClaude APIキーを入力してください（sk-ant-...）');
+    return;
+  }
+  apiKey = key;
+  localStorage.setItem('sakura_apikey', key);
+  document.getElementById('apiscreen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  renderGrid();
+}
+
+function logout() {
+  localStorage.removeItem('sakura_apikey');
+  location.reload();
+}
+
+function renderGrid() {
+  const grid = document.getElementById('agent-grid');
+  grid.innerHTML = AGENTS.slice(1).map((a, i) => `
+    <div class="agent-card" id="card-${i+1}" onclick="selectAgent(${i+1})">
+      <span class="agent-icon">${a.icon}</span>
+      <div class="agent-name">${a.name}</div>
+      <div class="agent-role">${a.role}</div>
+    </div>
+  `).join('');
+}
+
+function selectAgent(idx) {
+  selectedIdx = idx;
+  document.querySelectorAll('.agent-card').forEach(c => c.classList.remove('selected'));
+  const card = document.getElementById('card-' + idx);
+  if (card) card.classList.add('selected');
+
+  const a = AGENTS[idx];
+  document.getElementById('ch-icon').textContent = a.icon;
+  document.getElementById('ch-name').textContent = a.name;
+  document.getElementById('ch-role').textContent = a.role;
+
+  const presetRow = document.getElementById('preset-row');
+  presetRow.innerHTML = a.presets.map(p => `
+    <button class="preset-btn" onclick="usePreset('${p}')">${p}</button>
+  `).join('');
+
+  if (!chatHistory[idx]) chatHistory[idx] = [];
+  renderMessages(idx);
+
+  document.getElementById('empty-state').style.display = 'none';
+  document.getElementById('chat-panel').style.display = 'block';
+  document.getElementById('chat-input').value = '';
+
+  setTimeout(() => {
+    document.getElementById('chat-panel').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, 100);
+}
+
+function renderMessages(idx) {
+  const container = document.getElementById('chat-messages');
+  const history = chatHistory[idx] || [];
+  if (history.length === 0) {
+    container.innerHTML = `<div style="text-align:center;font-size:13px;color:#6b6b8a;padding:1rem;">指示を入力または上のボタンを押してください</div>`;
+    return;
+  }
+  container.innerHTML = history.map(m => `
+    <div class="msg ${m.role === 'user' ? 'user' : 'ai'}">${escapeHtml(m.content)}</div>
+  `).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+function escapeHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function usePreset(text) {
+  document.getElementById('chat-input').value = text;
+  document.getElementById('chat-input').focus();
+}
+
+function handleKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey && window.innerWidth > 768) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+function autoResize(el) {
+  el.style.height = 'auto';
+  el.style.height = Math.min(el.scrollHeight, 120) + 'px';
+}
+
+async function sendMessage() {
+  if (isLoading || selectedIdx === null) return;
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  isLoading = true;
+  document.getElementById('send-btn').disabled = true;
+  input.value = '';
+  input.style.height = 'auto';
+
+  const idx = selectedIdx;
+  const a = AGENTS[idx];
+  if (!chatHistory[idx]) chatHistory[idx] = [];
+  chatHistory[idx].push({ role: 'user', content: text });
+  renderMessages(idx);
+
+  const container = document.getElementById('chat-messages');
+  const loadingEl = document.createElement('div');
+  loadingEl.className = 'msg loading';
+  loadingEl.textContent = a.icon + ' 考えています...';
+  container.appendChild(loadingEl);
+  container.scrollTop = container.scrollHeight;
+
+  try {
+    const messages = chatHistory[idx].map(m => ({ role: m.role, content: m.content }));
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        system: a.system,
+        messages: messages
+      })
+    });
+
+    const data = await res.json();
+    loadingEl.remove();
+
+    if (data.content && data.content[0]) {
+      const reply = data.content[0].text;
+      chatHistory[idx].push({ role: 'assistant', content: reply });
+      renderMessages(idx);
+    } else if (data.error) {
+      const errEl = document.createElement('div');
+      errEl.className = 'msg error';
+      errEl.textContent = 'エラー: ' + (data.error.message || 'APIエラーが発生しました');
+      container.appendChild(errEl);
+      container.scrollTop = container.scrollHeight;
+    }
+  } catch (err) {
+    loadingEl.remove();
+    const errEl = document.createElement('div');
+    errEl.className = 'msg error';
+    errEl.textContent = '通信エラーが発生しました。APIキーと接続を確認してください。';
+    container.appendChild(errEl);
+    container.scrollTop = container.scrollHeight;
+  }
+
+  isLoading = false;
+  document.getElementById('send-btn').disabled = false;
+}
+
+// 起動時にAPIキーを確認
+window.addEventListener('load', () => {
+  const saved = localStorage.getItem('sakura_apikey');
+  if (saved && saved.startsWith('sk-ant-')) {
+    document.getElementById('apikey-input').value = saved;
+    startApp();
+  }
+});
+</script>
+</body>
+</html>
